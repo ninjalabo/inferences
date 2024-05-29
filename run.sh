@@ -1,13 +1,14 @@
 #!/bin/sh
 
-if [ $# -lt 3 ]; then
-  echo "Usage: $0 <inference> <model_path> <data_path...>"
+if [ $# -lt 4 ]; then
+  echo "Usage: $0 <image_name> <inference> <model_path> <data_path...>"
   exit 1
 fi
 
-inference=$1
-model_path=$2
-shift 2
+image_name=$1
+inference=$2
+model_path=$3
+shift 3
 data_paths="$@"
 
 if [ ${inference##*.} = py ]; then
@@ -27,11 +28,7 @@ else
   model_size=$(stat -c%s $model_path)
 fi
 
-# save results to output.json
-{
-  echo "{"
-  echo "  \"accuracy\": $accuracy,"
-  echo "  \"size\": $model_size,"
-  echo "  \"speed\": $speed"
-  echo "}"
-} > output.json
+# Update output.json file for the specified image
+temp_file=$(mktemp)
+jq "map(if .image == \"$image_name\" then . + {results: {accuracy: $accuracy, size: $model_size, speed: $speed}} else . end)" md/output.json > "$temp_file"
+mv "$temp_file" md/output.json
