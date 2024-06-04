@@ -20,7 +20,8 @@ def run_python(model_path, dir_path):
     probs = np.empty([len(files), 10], float)
     files = [files[i:i+bs] for i in range(0, len(files), bs)] # split files into batches
 
-    model = torch.load(model_path)
+    model = torch.load(model_path).model
+    model.eval()
     for i, batch in enumerate(files):
         bs = len(batch)
         imgs = torch.empty([bs, nch, h, w])
