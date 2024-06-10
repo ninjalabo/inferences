@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -lt 4 ]; then
+if [ $# -lt 3 ]; then
   echo "Usage: $0 <inference> <model_path> <data_path...>"
   exit 1
 fi
