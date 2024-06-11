@@ -26,7 +26,15 @@ else
   model_size=$(stat -c%s $model_path)
 fi
 
-# Update runtime_info.json
-temp_file=$(mktemp)
-jq ".results = {accuracy: $accuracy, size: $model_size, speed: $speed}" md/runtime_info.json > "$temp_file"
-mv "$temp_file" md/runtime_info.json
+# Check if accuracy, speed, and model_size are not empty
+if [ -n "$accuracy" ] && [ -n "$speed" ] && [ -n "$model_size" ]; then
+  # Update runtime_info.json
+  temp_file=$(mktemp)
+  jq ".results = {accuracy: $accuracy, size: $model_size, speed: $speed}" md/runtime_info.json > "$temp_file"
+  mv "$temp_file" md/runtime_info.json
+else
+  echo "Error: Inference failed."
+  [ -z "$accuracy" ] && echo "Accuracy is empty."
+  [ -z "$speed" ] && echo "Speed is empty."
+  [ -z "$model_size" ] && echo "Model size is empty."
+fi
