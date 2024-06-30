@@ -1,13 +1,14 @@
 #!/bin/sh
 
-if [ $# -lt 3 ]; then
-  echo "Usage: $0 <inference> <model_path> <data_path...>"
+if [ $# -lt 4 ]; then
+  echo "Usage: $0 <image_name> <inference> <model_path> <data_path...>"
   exit 1
 fi
 
-inference=$1
-model_path=$2
-shift 2
+image_name=$1
+inference=$2
+model_path=$3
+shift 3
 data_paths="$@"
 
 if [ ${inference##*.} = py ]; then
@@ -15,6 +16,7 @@ if [ ${inference##*.} = py ]; then
 else
   command=$inference
 fi
+
 start_time=$(date +%s)
 accuracy=$($command $model_path $data_paths)
 end_time=$(date +%s)
@@ -26,12 +28,15 @@ else
   model_size=$(stat -c%s $model_path)
 fi
 
-# Check if accuracy, speed, and model_size are not empty
-if [ -n "$accuracy" ] && [ -n "$speed" ] && [ -n "$model_size" ]; then
-  # Update runtime_info.json
+# Update output.json file for the specified image
+temp_file=$(mktemp)
+jq "map(if .image == \"$image_name\" then . + {results: {accuracy: $accuracy, size: $model_size, speed: $speed}} else . end)" md/output.json > "$temp_file"
+mv "$temp_file" md/output.json
+
+if [ -n "$accuracy" ] && [ -n "$model_size" ] && [ -n "$speed" ]; then
   temp_file=$(mktemp)
-  jq ".results = {accuracy: $accuracy, size: $model_size, speed: $speed}" md/runtime_info.json > "$temp_file"
-  mv "$temp_file" md/runtime_info.json
+  jq "map(if .image == \"$image_name\" then . + {results: {accuracy: $accuracy, size: $model_size, speed: $speed}} else . end)" md/output.json > "$temp_file"
+  mv "$temp_file" md/output.json
 else
   echo "Error: Inference failed."
   [ -z "$accuracy" ] && echo "Accuracy is empty."
