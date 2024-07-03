@@ -37,4 +37,5 @@ else
   [ -z "$accuracy" ] && echo "Accuracy is empty."
   [ -z "$speed" ] && echo "Speed is empty."
   [ -z "$model_size" ] && echo "Model size is empty."
+  exit 1
 fi

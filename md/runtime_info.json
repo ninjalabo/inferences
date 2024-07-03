@@ -1,0 +1,10 @@
+{
+  "runtime": "tinyruntime",
+  "architecture": "amd64",
+  "image": "",
+  "compression": {
+    "quantization": false,
+    "pruning": 0
+  },
+  "results": {}
+}

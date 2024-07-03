@@ -1,0 +1,40 @@
+
+name: inference-test
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  run-amd64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Pip setup
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install fastai
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare environment
+        run: |
+          git clone --branch 1.x https://huggingface.co/datasets/ninjalabo/imagenette2-320 md/data/test
+          git clone https://huggingface.co/ninjalabo/resnet18 && cp resnet18/model.pkl md/model.pkl
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run tests
+        run: python test_all.py amd64
