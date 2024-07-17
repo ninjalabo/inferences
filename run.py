@@ -5,6 +5,7 @@ import struct
 import sys
 
 def run_python(model_path, dir_path):
+    torch.set_num_threads(1) # FIX: parallelize inference
     # get file paths of images and their labels
     files = []
     label_count = np.zeros(10, dtype=int)
@@ -15,7 +16,7 @@ def run_python(model_path, dir_path):
         files += f_paths
 
     # run Python inference
-    bs = len(files)
+    bs = 1 # FIX: change batch size
     sizeof_float, nch, h, w = 4, 3, 224, 224
     probs = np.empty([len(files), 10], float)
     files = [files[i:i+bs] for i in range(0, len(files), bs)] # split files into batches
