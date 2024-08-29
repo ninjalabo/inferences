@@ -1,5 +1,4 @@
 import subprocess
-import json
 import sys
 
 def run_command(command, cwd=None):
@@ -13,20 +12,19 @@ def run_command(command, cwd=None):
 
 def main(architecture):
     # Python inference
-    run_command("./run.sh run.py md/model.pkl md/data/test")
+    run_command("./run.sh run.py md/model.pkl data/test")
 
     # Vanilla C inference
-    run_command("docker run --rm -v $(pwd)/md:/root/md ninjalabo/compiler-export-models")
-    run_command(f"./run.sh {architecture}/run md/model.bin md/data/test/*/*")
-
-    # Quantized C inference 
-    with open('md/runtime_info.json', 'r') as file:
-        data = json.load(file)
-        data['compression']['quantization'] = True
-    with open('md/runtime_info.json', 'w') as file:
-        json.dump(data, file, indent=4)
-    run_command("docker run --rm -v $(pwd)/md:/root/md ninjalabo/compiler-export-models")
-    run_command(f"./run.sh {architecture}/runq md/model.bin md/data/test/*/*")
+    run_command("docker run --rm -v $(pwd)/md:/root/md ninjalabo/compiler-export-vanilla")
+    run_command(f"./run.sh {architecture}/vanilla/run md/model.bin data/test/*/*")
+    
+    # Dynamically quantization C inference
+    run_command("docker run --rm -v $(pwd)/md:/root/md ninjalabo/compiler-export-dq")
+    run_command(f"./run.sh {architecture}/dq/runq md/model.bin data/test/*/*")
+    
+    # Static quantization C inference
+    run_command("docker run --rm -v $(pwd)/md:/root/md -v $(pwd)/data:/root/data ninjalabo/compiler-export-sq")
+    run_command(f"./run.sh {architecture}/sq/runq md/model.bin data/test/*/*")
 
 if __name__ == "__main__":
     architecture = sys.argv[1]
