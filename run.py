@@ -3,6 +3,32 @@ import torch
 import numpy as np
 import struct
 import sys
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+from contextlib import redirect_stdout
+
+class TensorDataset(Dataset):
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
+        self.classes = sorted(os.listdir(root_dir))
+        self.file_paths = []
+        self.labels = []
+        for label in self.classes:
+            label_dir = os.path.join(root_dir, label)
+            files = os.listdir(label_dir)
+            for file in files:
+                self.file_paths.append(os.path.join(label_dir, file))
+                self.labels.append(int(label))
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        with open(self.file_paths[idx], "rb") as f:
+            nch, h, w = 3, 224, 224
+            tensor = torch.tensor(struct.unpack("f"*nch*h*w, f.read())).view(nch,h,w)
+        label = self.labels[idx]
+        return tensor, label
 
 def run_python(model_path, dir_path):
     # get file paths of images and their labels
@@ -15,26 +41,11 @@ def run_python(model_path, dir_path):
         files += f_paths
 
     # run Python inference
-    bs = 1 # FIX: change batch size
-    sizeof_float, nch, h, w = 4, 3, 224, 224
-    probs = np.empty([len(files), 10], float)
-    files = [files[i:i+bs] for i in range(0, len(files), bs)] # split files into batches
-
-    model = torch.load(model_path, map_location='cpu').model
-    model.eval()
-    for i, batch in enumerate(files):
-        bs = len(batch)
-        imgs = torch.empty([bs, nch, h, w])
-        for j, file in enumerate(batch):
-            f = open(file, "rb")
-            imgs[j] = torch.tensor(struct.unpack("f"*(nch*h*w), f.read())).view(1,nch,h,w)
-            f.close()
-        probs[i*bs:(i+1)*bs] = model(imgs).detach().view(bs, -1).numpy()
-
-    labels = np.array([label for label in range(10) for _ in range(label_count[label])])
-    preds = np.argmax(np.array(probs), axis=1)
-
-    accuracy = 100 * np.mean(preds==labels)
+    learn = torch.load(model_path, map_location='cpu')
+    learn.model.eval()
+    test_dl = DataLoader(TensorDataset("data/test/"), batch_size=32, num_workers=os.cpu_count())
+    with open(os.devnull, 'w') as f, redirect_stdout(f): # suppress stdout
+        _, accuracy = learn.validate(dl=test_dl)
 
     return accuracy
 

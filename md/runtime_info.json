@@ -4,8 +4,8 @@
   "image": "",
   "compression": {
     "quantization": {
-	"type": "dynamic",
-	"asymmetric": true
+      "type": "dynamic",
+      "asymmetric": true
     },
     "pruning": 0
   },
