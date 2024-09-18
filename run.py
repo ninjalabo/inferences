@@ -46,6 +46,7 @@ def run_python(model_path, dir_path):
     test_dl = DataLoader(TensorDataset("data/test/"), batch_size=32, num_workers=os.cpu_count())
     with open(os.devnull, 'w') as f, redirect_stdout(f): # suppress stdout
         _, accuracy = learn.validate(dl=test_dl)
+        accuracy = 100 * accuracy
 
     return accuracy
 
